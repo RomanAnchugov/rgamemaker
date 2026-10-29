@@ -1,0 +1,16 @@
+[package]
+name = "demo-gen"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "demo-gen"
+path = "src/main.rs"
+
+[lib]
+name = "demo_gen"
+path = "src/lib.rs"
+
+[dependencies]
+gmformat = { path = "../gmformat" }
+base64 = "0.22"

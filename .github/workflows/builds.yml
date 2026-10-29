@@ -1,0 +1,68 @@
+name: builds
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-22.04]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Linux graphics deps
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libxi-dev libxcursor-dev libxrandr-dev libxinerama-dev libgl1-mesa-dev
+
+      - name: Build bare runtime
+        run: cargo build --release -p gmruntime
+
+      - name: Build demo game (embedded)
+        run: |
+          cargo run -p demo-gen -- demo.gmproj
+          cargo build --release -p gmruntime --target-dir target-embedded
+        env:
+          RGM_EMBED: demo.gmproj
+
+      - name: Package (unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p dist
+          cp target/release/gmruntime dist/gmruntime-${{ runner.os }}
+          cp target-embedded/release/gmruntime dist/rgm-demo-${{ runner.os }}
+          cd dist && tar czf ../rgm-${{ runner.os }}.tar.gz *
+
+      - name: Package (windows)
+        if: runner.os == 'Windows'
+        run: |
+          mkdir dist
+          copy target\release\gmruntime.exe dist\gmruntime-Windows.exe
+          copy target-embedded\release\gmruntime.exe dist\rgm-demo-Windows.exe
+          Compress-Archive dist rgm-Windows.zip
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rgm-${{ runner.os }}
+          path: |
+            rgm-*.tar.gz
+            rgm-*.zip
+
+      - name: Release (tags only)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            rgm-*.tar.gz
+            rgm-*.zip

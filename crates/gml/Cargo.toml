@@ -1,0 +1,6 @@
+[package]
+name = "gml"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]

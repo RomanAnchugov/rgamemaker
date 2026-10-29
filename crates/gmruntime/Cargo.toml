@@ -1,0 +1,14 @@
+[package]
+name = "gmruntime"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "gmruntime"
+path = "src/main.rs"
+
+[dependencies]
+gmengine = { path = "../gmengine" }
+gmformat = { path = "../gmformat" }
+base64 = "0.22"
+macroquad = "0.4"
